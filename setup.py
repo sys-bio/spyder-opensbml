@@ -16,10 +16,9 @@ def get_readme():
 REQUIREMENTS = ['tellurium']
 
 setup(
-    name='spyder_opensbml',
+    name='spyder.opensbml',
     version='1.0.0',
     packages=['spyder_opensbml'],
-    package_data={'spyder_opensbml': ['spyder_opensbml/*.*']},
     keywords=["Qt PyQt4 PyQt5 PySide spyder plugins spyplugins systems-biology"],
     #install_requires=REQUIREMENTS,
     url='https://github.com/kirichoi/spyder-opensbml',
@@ -42,6 +41,6 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development :: Widget Sets'],
-    zip_safe = False  
+    zip_safe=False
     )
-        
+    

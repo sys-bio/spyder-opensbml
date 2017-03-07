@@ -8,9 +8,9 @@ The plugin adds a function to directly open SBML files and create an editor wind
 The plugin also generates default template for [Tellurium](http://tellurium.analogmachine.org/) by placing Antimony model in Tellurim.loada function, which loads Antimony model into a new [RoadRunner](http://libroadrunner.org/) instance.
 
 ## Installation
-To install, run
+To install, obtain the source, go to the folder where source is located and run:
 
-`python setup.py install`
+`pip install .`
 
 ## Dependencies
 spyder-openSBML requires Spyder IDE, Tellurium, and all of its dependencies. Tellurium is not available on PyPI yet and the dependency requirement is not enforced, so manual installation for Tellurium is required.
