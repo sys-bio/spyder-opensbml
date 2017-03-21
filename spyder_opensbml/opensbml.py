@@ -13,7 +13,7 @@ import os
 import re
 from spyder.config.base import get_translation
 from spyder.config.main import CONF
-from spyder.plugins import SpyderPluginMixin
+from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
 from spyder.py3compat import getcwd
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QApplication, QMessageBox
@@ -29,11 +29,6 @@ except ImportError:
 
 _ = get_translation("opensbml", dirname="spyder_opensbml")
 
-class DummyDock(object):
-
-    def close(self):
-        pass
-
 class openSBML(SpyderPluginMixin):
     "Open sbml files and translate into antimony string"
     
@@ -42,7 +37,8 @@ class openSBML(SpyderPluginMixin):
     
     def __init__(self, main):
         super(openSBML, self).__init__(main)
-        self.dockwidget = DummyDock()
+        self.dockwidget = SpyderDockWidget(self.get_plugin_title(), main)
+        self.dockwidget.hide()
         
     # --- SpyderPluginWidget API ----------------------------------------------
     def get_plugin_title(self):
