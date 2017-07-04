@@ -16,7 +16,7 @@ def get_readme():
 REQUIREMENTS = ['tellurium']
 
 setup(
-    name='spyder.opensbml',
+    name='spyder_opensbml',
     version='1.0.0',
     packages=['spyder_opensbml'],
     keywords=["Qt PyQt4 PyQt5 PySide spyder plugins spyplugins systems-biology"],
