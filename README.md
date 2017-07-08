@@ -1,5 +1,6 @@
 # spyder-opensbml
 openSBML plugin for Spyder 3.0+
+
 Copyright (c) 2017 Kiri Choi
 
 ## Introduction
