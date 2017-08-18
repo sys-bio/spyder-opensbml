@@ -11,13 +11,13 @@ from __future__ import print_function, division
 
 import os
 import re
-from spyder.config.base import get_translation
-from spyder.config.main import CONF
+from spyder.config.base import get_translation, PYTEST
+from spyder.config.utils import (get_filter, get_edit_filters, 
+                                 get_edit_filetypes)
 from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
-from spyder.py3compat import getcwd
-from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QApplication, QMessageBox
-from qtpy.compat import getopenfilenames
+from spyder.py3compat import getcwd, to_text_string
+from qtpy.QtWidgets import (QApplication, QMessageBox, QFileDialog, QAction)
+from qtpy.compat import getopenfilenames, from_qvariant
 from spyder.utils import encoding, sourcecode
 from spyder.utils.qthelpers import create_action
 from spyder.widgets.sourcecode.codeeditor import CodeEditor
@@ -50,11 +50,11 @@ class openSBML(SpyderPluginMixin):
         opensbml_act = create_action(self.main, _("Open SBML file"),
                                    triggered=self.run_opensbml) 
         self.main.file_menu_actions.insert(5, opensbml_act)
-        
+
     def closing_plugin(self, cancelable=False):
         """Perform actions before parent main window is closed"""
         return True
-            
+
     def apply_plugin_settings(self, options):
         """Apply configuration file's plugin settings"""
         pass
@@ -64,30 +64,55 @@ class openSBML(SpyderPluginMixin):
              processevents=True):
         """Prompt the user to load a SBML file, translate to antimony, and 
         display in a new window"""
-        editorwindow = None #Used in editor.load
-        processevents=True  #Used in editor.load
         editor = self.main.editor
-        basedir = getcwd()
-        if CONF.get('workingdir', 'editor/open/browse_scriptdir'):
+        editor0 = editor.get_current_editor()
+        if editor0 is not None:
+            position0 = editor0.get_position('cursor')
+            filename0 = editor.get_current_filename()
+        else:
+            position0, filename0 = None, None
+        if not filenames:
+            # Recent files action
+            action = editor.sender()
+            if isinstance(action, QAction):
+                filenames = from_qvariant(action.data(), to_text_string)
+        if not filenames:
+            basedir = getcwd()
+            if editor.edit_filetypes is None:
+                editor.edit_filetypes = get_edit_filetypes()
+            if editor.edit_filters is None:
+                editor.edit_filters = get_edit_filters()
+
             c_fname = editor.get_current_filename()
             if c_fname is not None and c_fname != editor.TEMPFILE_PATH:
                 basedir = os.path.dirname(c_fname)
-        editor.redirect_stdio.emit(False)
-        parent_widget = editor.get_current_editorstack()
-        selectedfilter = ''
-        filters = 'SBML files (*.sbml *.xml);;All files (*.*)'
-        filenames, _selfilter = getopenfilenames(parent_widget,
-                                     _("Open SBML file"), basedir, filters,
-                                     selectedfilter=selectedfilter)
-        editor.redirect_stdio.emit(True)
-        if filenames:
-            filenames = [os.path.normpath(fname) for fname in filenames]
-            if CONF.get('workingdir', 'editor/open/auto_set_to_basedir'):
-                directory = os.path.dirname(filenames[0])
-                editor.emit(Signal("open_dir(QString)"), directory)
-        else:
-            #The file dialog box was closed without selecting a file.
-            return
+            editor.redirect_stdio.emit(False)
+            parent_widget = editor.get_current_editorstack()
+            if filename0 is not None:
+                selectedfilter = get_filter(editor.edit_filetypes,
+                                            os.path.splitext(filename0)[1])
+            else:
+                selectedfilter = ''
+            if not PYTEST:
+                customfilters = 'SBML files (*.sbml *.xml);;All files (*.*)'
+                filenames, _sf = getopenfilenames(
+                                    parent_widget,
+                                    _("Open SBML file"), basedir,
+                                    customfilters,
+                                    selectedfilter=selectedfilter,
+                                    options=QFileDialog.HideNameFilterDetails)
+            else:
+                # Use a Qt (i.e. scriptable) dialog for pytest
+                dialog = QFileDialog(parent_widget, _("Open SBML file"),
+                                     options=QFileDialog.DontUseNativeDialog)
+                if dialog.exec_():
+                    filenames = dialog.selectedFiles()
+            editor.redirect_stdio.emit(True)
+            if filenames:
+                filenames = [os.path.normpath(fname) for fname in filenames]
+            else:
+                return
+            
         focus_widget = QApplication.focusWidget()
         if editor.dockwidget and not editor.ismaximized and\
            (not editor.dockwidget.isAncestorOf(focus_widget)\
@@ -95,7 +120,7 @@ class openSBML(SpyderPluginMixin):
             editor.dockwidget.setVisible(True)
             editor.dockwidget.setFocus()
             editor.dockwidget.raise_()
-        
+
         def _convert(fname):
             fname = os.path.abspath(encoding.to_unicode_from_fs(fname))
             if os.name == 'nt' and len(fname) >= 2 and fname[1] == ':':
@@ -109,18 +134,21 @@ class openSBML(SpyderPluginMixin):
             filenames = [_convert(filenames)]
         else:
             filenames = [_convert(fname) for fname in list(filenames)]
-        
+            
+        if isinstance(goto, int):
+            goto = [goto]
+        elif goto is not None and len(goto) != len(filenames):
+            goto = None
+            
         for index, filename in enumerate(filenames):
             p = re.compile( '(.xml$|.sbml$)')
             pythonfile = p.sub( '_antimony.py', filename)
             if (pythonfile == filename):
-                pythonfile = filename + "_antimony.py"
+                pythonfile = filename + "_antimony.py"            
+            # -- Do not open an already opened file
             current_editor = editor.set_current_filename(pythonfile, editorwindow)
-            if current_editor is not None:
-                # -- TODO:  Do not open an already opened file
-                pass
-            else:
-                # -- Not an existing opened file:
+            if current_editor is None:
+                # -- Not a valid filename:
                 if not os.path.isfile(filename):
                     continue
                 # --
@@ -133,18 +161,19 @@ class openSBML(SpyderPluginMixin):
                 finfo.path = editor.main.get_spyder_pythonpath()
                 editor._clone_file_everywhere(finfo)
                 current_editor = current_es.set_current_filename(newname)
-                #if (current_editor is not None):
-                #    editor.register_widget_shortcuts("Editor", current_editor)
-                
-                current_es.analyze_script()
 
+                current_es.analyze_script()
+            if goto is not None: # 'word' is assumed to be None as well
+                current_editor.go_to_line(goto[index], word=word)
+                position = current_editor.get_position('cursor')
+                editor.cursor_moved(filename0, position0, filename, position)
             if (current_editor is not None):
                 current_editor.clearFocus()
                 current_editor.setFocus()
                 current_editor.window().raise_()
             if processevents:
                 QApplication.processEvents()
-
+        
     def load_and_translate(self, sbmlfile, pythonfile, editor, set_current=True):
         """
         Read filename as combine archive, unzip, translate, reconstitute in 
