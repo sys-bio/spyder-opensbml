@@ -187,7 +187,15 @@ class openSBML(SpyderPluginMixin):
         widgeteditor.starting_long_process.emit(_("Loading %s...") % sbmlfile)
         text, enc = encoding.read(sbmlfile)
         sbmlstr = te.readFromFile(sbmlfile)
-        text = "import tellurium as te\n\nr = te.loada('''\n" + str(te.sbmlToAntimony(sbmlstr)) + "''')"
+        try:
+            transtext = str(te.sbmlToAntimony(sbmlstr))
+        except Exception as e:
+            transtext = """*********************WARNING*********************
+Failed to translate the SBML model to Antimony string.
+Please check that the SBML file is valid.
+*********************WARNING*********************"""
+            transtext = transtext + "\n\n" + str(e)
+        text = "import tellurium as te\n\nr = te.loada('''\n" + transtext + "''')"
         finfo = widgeteditor.create_new_editor(pythonfile, enc, text, set_current, new=True)
         index = widgeteditor.data.index(finfo)
         widgeteditor._refresh_outlineexplorer(index, update=True)
