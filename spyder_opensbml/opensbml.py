@@ -11,7 +11,7 @@ from __future__ import print_function, division
 
 import os
 import re
-from spyder.config.base import get_translation, PYTEST
+from spyder.config.base import get_translation, running_under_pytest
 from spyder.config.utils import (get_filter, get_edit_filters, 
                                  get_edit_filetypes)
 from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
@@ -93,7 +93,7 @@ class openSBML(SpyderPluginMixin):
                                             os.path.splitext(filename0)[1])
             else:
                 selectedfilter = ''
-            if not PYTEST:
+            if not running_under_pytest():
                 customfilters = 'SBML files (*.sbml *.xml);;All files (*.*)'
                 filenames, _sf = getopenfilenames(
                                     parent_widget,
