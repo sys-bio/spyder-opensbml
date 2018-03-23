@@ -1,7 +1,7 @@
 # spyder-opensbml
-openSBML plugin for Spyder 3.0+
+openSBML plugin for Spyder 3.2.0+
 
-Copyright (c) 2017 Kiri Choi
+Copyright (c) 2018 Kiri Choi
 
 ## Introduction
 spyder-openSBML is a plugin for [Spyder IDE](https://github.com/spyder-ide/spyder) version 3 and over. 
