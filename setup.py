@@ -17,7 +17,7 @@ REQUIREMENTS = ['tellurium']
 
 setup(
     name='spyder_opensbml',
-    version='1.1.0',
+    version='1.1.1',
     packages=['spyder_opensbml'],
     keywords=["Qt PyQt4 PyQt5 PySide spyder plugins spyplugins systems-biology"],
     #install_requires=REQUIREMENTS,
@@ -27,7 +27,7 @@ setup(
     author_email='',
     maintainer='Sauro Lab',
     maintainer_email='',
-    description='openSBML plugin for Spyder 3.0+',
+    description='openSBML plugin for Spyder 3.2.0+',
     long_description=get_readme(),
     classifiers=[
         'Development Status :: 4 - Beta',
