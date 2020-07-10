@@ -14,13 +14,14 @@ import re
 from spyder.config.base import get_translation, running_under_pytest
 from spyder.config.utils import (get_filter, get_edit_filters, 
                                  get_edit_filetypes)
-from spyder.plugins import SpyderPluginMixin, SpyderDockWidget
+from spyder.api.plugins import SpyderPluginWidget
+from spyder.widgets.dock import SpyderDockWidget
 from spyder.py3compat import getcwd, to_text_string
 from qtpy.QtWidgets import (QApplication, QMessageBox, QFileDialog, QAction)
 from qtpy.compat import getopenfilenames, from_qvariant
 from spyder.utils import encoding, sourcecode
 from spyder.utils.qthelpers import create_action
-from spyder.widgets.sourcecode.codeeditor import CodeEditor
+from spyder.plugins.editor.widgets.codeeditor import CodeEditor
 
 try:
     import tellurium as te
@@ -29,7 +30,7 @@ except ImportError:
 
 _ = get_translation("opensbml", dirname="spyder_opensbml")
 
-class openSBML(SpyderPluginMixin):
+class openSBML(SpyderPluginWidget):
     "Open sbml files and translate into antimony string"
     
     CONF_SECTION = 'openSBML'
@@ -114,7 +115,7 @@ class openSBML(SpyderPluginMixin):
                 return
             
         focus_widget = QApplication.focusWidget()
-        if editor.dockwidget and not editor.ismaximized and\
+        if editor.dockwidget and\
            (not editor.dockwidget.isAncestorOf(focus_widget)\
             and not isinstance(focus_widget, CodeEditor)):
             editor.dockwidget.setVisible(True)
